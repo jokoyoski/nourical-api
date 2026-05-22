@@ -1,0 +1,28 @@
+[tool.poetry]
+package-mode = false
+name = "nourical"
+version = "0.1.0"
+description = "A Flask web application with authentication and OTP verification"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+Flask = "^3.0.0"
+flask-cors = "^4.0.0"
+python-dotenv = "^1.0.0"
+psycopg2-binary = "^2.9.9"
+Flask-SQLAlchemy = "^3.1.1"
+flasgger = "^0.9.7"
+bcrypt = "^4.1.2"
+pyotp = "^2.9.0"
+resend = "^0.8.0"
+pyjwt = "^2.12.1"
+gunicorn = ">=21.0,<26"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
