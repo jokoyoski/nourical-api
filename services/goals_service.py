@@ -41,6 +41,15 @@ class HealthCondition(str, Enum):
     HIGH_CHOLESTEROL = "high_cholesterol"
     CANCER = "cancer"
     HEART_DISEASE = "heart_disease"
+    KIDNEY_DISEASE = "kidney_disease"
+    OTHER = "other"
+    PREFER_NOT_TO_SAY = "prefer_not_to_say"
+
+class Gender(str, Enum):
+    MALE = "male"
+    FEMALE = "female"
+    OTHER = "other"
+    NON_BINARY = "non_binary"
 
 class GoalsService:
     @staticmethod
@@ -85,27 +94,32 @@ class GoalsService:
             {
                 "value": ActivityLevel.SEDENTARY.value,
                 "label": "Sedentary",
-                "description": "Desk job, minimal exercise"
+                "description": "Desk job, minimal exercise",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779475488/desk_mzqrrh.png"
             },
             {
                 "value": ActivityLevel.LIGHTLY_ACTIVE.value,
                 "label": "Lightly Active",
-                "description": "Light exercise 1-3x/week"
+                "description": "Light exercise 1-3x/week",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779475488/walk_agcrgc.png"
             },
             {
                 "value": ActivityLevel.MODERATELY_ACTIVE.value,
                 "label": "Moderately Active",
-                "description": "Exercise 3-5x/week"
+                "description": "Exercise 3-5x/week",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779475488/swim_sgegny.png"
             },
             {
                 "value": ActivityLevel.VERY_ACTIVE.value,
                 "label": "Very Active",
-                "description": "Intense exercise 6-7x/week"
+                "description": "Intense exercise 6-7x/week",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779475488/power_ld5imv.png"
             },
             {
                 "value": ActivityLevel.EXTREMELY_ACTIVE.value,
                 "label": "Extremely Active",
-                "description": "Physical job + training"
+                "description": "Physical job + training",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779475488/power_ld5imv.png"
             }
         ]
         return activity_levels
@@ -116,52 +130,62 @@ class GoalsService:
             {
                 "value": Region.EUROPE.value,
                 "label": "Europe",
-                "continent": "Europe"
+                "continent": "Europe",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779475661/globe_lt1evx.png"
             },
             {
                 "value": Region.NORTH_AMERICA.value,
                 "label": "North America",
-                "continent": "America"
+                "continent": "America",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779475661/globe_lt1evx.png"
             },
             {
                 "value": Region.LATIN_AMERICA.value,
                 "label": "Latin America",
-                "continent": "America"
+                "continent": "America",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779475661/globe_lt1evx.png"
             },
             {
                 "value": Region.SOUTH_AMERICA.value,
                 "label": "South America",
-                "continent": "America"
+                "continent": "America",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779475661/globe_lt1evx.png"
             },
             {
                 "value": Region.EAST_AFRICA.value,
                 "label": "East Africa",
-                "continent": "Africa"
+                "continent": "Africa",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779475661/globe_lt1evx.png"
             },
             {
                 "value": Region.SOUTHERN_AFRICA.value,
                 "label": "Southern Africa",
-                "continent": "Africa"
+                "continent": "Africa",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779475661/globe_lt1evx.png"
             },
             {
                 "value": Region.WEST_AFRICA.value,
                 "label": "West Africa",
-                "continent": "Africa"
+                "continent": "Africa",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779475661/globe_lt1evx.png"
             },
             {
                 "value": Region.NORTH_AFRICA.value,
                 "label": "North Africa",
-                "continent": "Africa"
+                "continent": "Africa",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779475661/globe_lt1evx.png"
             },
             {
                 "value": Region.ASIA.value,
                 "label": "Asia",
-                "continent": "Asia"
+                "continent": "Asia",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779475661/globe_lt1evx.png"
             },
             {
                 "value": Region.OCEANIA.value,
                 "label": "Oceania",
-                "continent": "Oceania"
+                "continent": "Oceania",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779475661/globe_lt1evx.png"
             }
         ]
         return regions
@@ -203,32 +227,82 @@ class GoalsService:
             {
                 "value": HealthCondition.PREGNANCY.value,
                 "label": "Pregnancy",
-                "description": "Trimester aware"
+                "description": "Trimester aware",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779476154/pregnant_iimxbp.png"
             },
             {
                 "value": HealthCondition.DIABETES.value,
                 "label": "Diabetes",
-                "description": "Blood sugar control"
+                "description": "Blood sugar control",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779476240/diabets_drpcsm.png"
             },
             {
                 "value": HealthCondition.HIGH_BLOOD_PRESSURE.value,
                 "label": "High blood pressure",
-                "description": "Sodium management"
+                "description": "Sodium management",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779476332/bllof_qpk29m.png"
             },
             {
                 "value": HealthCondition.HIGH_CHOLESTEROL.value,
                 "label": "High cholesterol",
-                "description": "Heart healthy fast"
+                "description": "Heart healthy fast",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779476152/high_cholestrol_xtlolb.png"
             },
             {
                 "value": HealthCondition.CANCER.value,
                 "label": "Cancer",
-                "description": "During or post treatment"
+                "description": "During or post treatment",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779476151/cancer_wzehba.png"
             },
             {
                 "value": HealthCondition.HEART_DISEASE.value,
                 "label": "Heart Disease",
-                "description": "Trimester aware"
+                "description": "Trimester aware",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779476152/heart_pyvnmh.png"
+            },
+            {
+                "value": HealthCondition.KIDNEY_DISEASE.value,
+                "label": "Kidney Disease",
+                "description": "Kidney health management",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779476153/kidney_od2enp.png"
+            },
+            {
+                "value": HealthCondition.OTHER.value,
+                "label": "Other",
+                "description": "Other health condition",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779476153/other_mgle0c.png"
+            },
+            {
+                "value": HealthCondition.PREFER_NOT_TO_SAY.value,
+                "label": "Prefer Not To Say",
+                "description": "Decline to specify",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779476154/prefer_not_say_k9dd3x.png"
             }
         ]
         return health_conditions
+    
+    @staticmethod
+    def get_genders():
+        genders = [
+            {
+                "value": Gender.MALE.value,
+                "label": "Male",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779476594/image_ijtcrz.png"
+            },
+            {
+                "value": Gender.FEMALE.value,
+                "label": "Female",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779476592/female_ev0usr.png"
+            },
+            {
+                "value": Gender.OTHER.value,
+                "label": "Other",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779476597/prfer_bovb2c.png"
+            },
+            {
+                "value": Gender.NON_BINARY.value,
+                "label": "Non Binary",
+                "icon": "https://res.cloudinary.com/jokoyoski/image/upload/v1779476595/non_binary_tj6agb.png"
+            }
+        ]
+        return genders

@@ -85,7 +85,7 @@ class OnboardingData(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user = db.relationship('User', backref=db.backref('onboarding_data', uselist=False, cascade='all, delete-orphan'))
-    
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -101,4 +101,30 @@ class OnboardingData(db.Model):
             'dietary_preferences': self.dietary_preferences,
             'cuisine_preferences': self.cuisine_preferences,
             'health_conditions': self.health_conditions
+        }
+
+class UserDevice(db.Model):
+    __tablename__ = 'user_devices'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    device_token = db.Column(db.String(500), nullable=False)
+    platform = db.Column(db.String(20), nullable=False)  # ios, android, or web
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('devices', lazy=True, cascade='all, delete-orphan'))
+
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'device_token', name='unique_user_device_token'),
+    )
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'device_token': self.device_token,
+            'platform': self.platform,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
         }

@@ -7,6 +7,7 @@ from config import Config
 def generate_jwt_token(user_id):
     """Generate JWT token for user"""
     payload = {
+        'sub': str(user_id),  # Required by flask-jwt-extended
         'user_id': user_id,
         'exp': datetime.utcnow() + timedelta(days=7),
         'iat': datetime.utcnow()

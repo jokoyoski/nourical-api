@@ -7,7 +7,7 @@ authors = ["Your Name <you@example.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 Flask = "^3.0.0"
 flask-cors = "^4.0.0"
 python-dotenv = "^1.0.0"
@@ -19,6 +19,8 @@ pyotp = "^2.9.0"
 resend = "^0.8.0"
 pyjwt = "^2.12.1"
 gunicorn = ">=21.0,<26"
+firebase-admin = "^6.5.0"
+flask-jwt-extended = "^4.7.4"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"

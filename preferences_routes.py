@@ -194,13 +194,13 @@ def save_onboarding_data():
     if not data:
         return jsonify({'error': 'Request body is required'}), 400
 
-    VALID_MAIN_GOALS = {'lose_weight', 'gain_weight', 'maintain_weight', 'build_muscle', 'eat_healthier'}
+    VALID_MAIN_GOALS = {'lose_weight', 'maintain_weight', 'gain_muscle', 'improve_overall_health', 'manage_conditions'}
     VALID_GENDERS = {'male', 'female', 'other'}
-    VALID_ACTIVITY_LEVELS = {'sedentary', 'lightly_active', 'moderately_active', 'very_active', 'extra_active'}
-    VALID_REGIONS = {'west_africa', 'east_africa', 'north_africa', 'south_africa', 'central_africa', 'other'}
+    VALID_ACTIVITY_LEVELS = {'sedentary', 'lightly_active', 'moderately_active', 'very_active', 'extremely_active'}
+    VALID_REGIONS = {'europe', 'north_america', 'latin_america', 'south_america', 'east_africa', 'southern_africa', 'west_africa', 'north_africa', 'asia', 'oceania'}
     VALID_DIETARY_PREFERENCES = {'vegetarian', 'vegan', 'pescatarian', 'halal', 'kosher', 'gluten_free', 'dairy_free', 'none'}
-    VALID_CUISINE_PREFERENCES = {'nigerian', 'ghanaian', 'ethiopian', 'kenyan', 'south_african', 'mediterranean', 'asian', 'american', 'european', 'other'}
-    VALID_HEALTH_CONDITIONS = {'diabetes', 'hypertension', 'high_cholesterol', 'celiac_disease', 'lactose_intolerance', 'none'}
+    VALID_CUISINE_PREFERENCES = {'nigerian', 'ghanaian', 'ethiopian', 'kenyan', 'south_african', 'mediterranean', 'asian', 'american', 'european', 'other', 'ivorian', 'senegalese', 'cameroonian'}
+    VALID_HEALTH_CONDITIONS = {'diabetes', 'high_blood_pressure', 'high_cholesterol', 'cancer', 'heart_disease', 'kidney_disease', 'pregnancy', 'other', 'prefer_not_to_say'}
 
     errors = {}
 
