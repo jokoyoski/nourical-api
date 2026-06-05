@@ -77,6 +77,29 @@ def set_meal_times():
         'meal_times': meal_times
     }), 201
 
+@preferences_bp.route('/notifications', methods=['GET'])
+@jwt_required
+def get_notification_preferences():
+    """
+    Get user's notification preferences
+    ---
+    tags:
+      - Preferences
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: Notification preferences retrieved
+      401:
+        description: Unauthorized
+    """
+    user_id = request.current_user_id
+    preferences = PreferencesService.get_notification_preferences(user_id)
+    
+    return jsonify({
+        'preferences': preferences
+    }), 200
+
 @preferences_bp.route('/notifications', methods=['POST'])
 @jwt_required
 def set_notification_preferences():
@@ -93,9 +116,6 @@ def set_notification_preferences():
         required: true
         schema:
           type: object
-          required:
-            - meal_reminders
-            - daily_summary
           properties:
             meal_reminders:
               type: boolean
@@ -109,14 +129,14 @@ def set_notification_preferences():
     """
     data = request.get_json()
     
-    if not data or not all(k in data for k in ['meal_reminders', 'daily_summary']):
-        return jsonify({'error': 'meal_reminders and daily_summary are required'}), 400
+    if not data:
+        return jsonify({'error': 'Request body is required'}), 400
     
     user_id = request.current_user_id
     preferences = PreferencesService.set_notification_preferences(
         user_id,
-        data['meal_reminders'],
-        data['daily_summary']
+        meal_reminders=data.get('meal_reminders'),
+        daily_summary=data.get('daily_summary')
     )
     
     return jsonify({

@@ -128,3 +128,124 @@ class UserDevice(db.Model):
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat()
         }
+
+class WeeklyMealPlan(db.Model):
+    __tablename__ = 'weekly_meal_plans'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    week_start = db.Column(db.Date, nullable=False)  # Monday of the week
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('meal_plans', lazy=True, cascade='all, delete-orphan'))
+    items = db.relationship('MealPlanItem', backref='plan', lazy=True, cascade='all, delete-orphan')
+
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'week_start', name='unique_user_week_plan'),
+    )
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'week_start': self.week_start.isoformat(),
+            'created_at': self.created_at.isoformat(),
+            'items': [item.to_dict() for item in self.items]
+        }
+
+
+class MealPlanItem(db.Model):
+    __tablename__ = 'meal_plan_items'
+
+    id = db.Column(db.Integer, primary_key=True)
+    meal_plan_id = db.Column(db.Integer, db.ForeignKey('weekly_meal_plans.id'), nullable=False)
+    day = db.Column(db.String(20), nullable=False)       # monday, tuesday, ...
+    meal_type = db.Column(db.String(20), nullable=False) # breakfast, lunch, dinner
+    meal_time = db.Column(db.String(5))                  # HH:MM
+    food_name = db.Column(db.String(200), nullable=False)
+    calories = db.Column(db.Float, default=0)
+    protein_g = db.Column(db.Float, default=0)
+    carbs_g = db.Column(db.Float, default=0)
+    fat_g = db.Column(db.Float, default=0)
+    description = db.Column(db.Text)
+    image_url = db.Column(db.String(500))
+    is_eaten = db.Column(db.Boolean, default=False, nullable=False)
+    eaten_at = db.Column(db.DateTime, nullable=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'meal_plan_id': self.meal_plan_id,
+            'day': self.day,
+            'meal_type': self.meal_type,
+            'meal_time': self.meal_time,
+            'food_name': self.food_name,
+            'calories': self.calories,
+            'protein_g': self.protein_g,
+            'carbs_g': self.carbs_g,
+            'fat_g': self.fat_g,
+            'description': self.description,
+            'image_url': self.image_url,
+            'is_eaten': self.is_eaten,
+            'eaten_at': self.eaten_at.isoformat() if self.eaten_at else None
+        }
+
+
+class FoodLog(db.Model):
+    __tablename__ = 'food_logs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    food_name = db.Column(db.String(200), nullable=False)
+    calories = db.Column(db.Float, default=0, nullable=False)
+    protein_g = db.Column(db.Float, default=0, nullable=False)
+    carbs_g = db.Column(db.Float, default=0, nullable=False)
+    fat_g = db.Column(db.Float, default=0, nullable=False)
+    meal_type = db.Column(db.String(50))  # breakfast, lunch, dinner, snack
+    logged_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('food_logs', lazy=True, cascade='all, delete-orphan'))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'food_name': self.food_name,
+            'calories': self.calories,
+            'protein_g': self.protein_g,
+            'carbs_g': self.carbs_g,
+            'fat_g': self.fat_g,
+            'meal_type': self.meal_type,
+            'logged_at': self.logged_at.isoformat()
+        }
+
+class NotificationPreferences(db.Model):
+    __tablename__ = 'notification_preferences'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, unique=True)
+    meal_reminders = db.Column(db.Boolean, default=True, nullable=False)
+    hydration_nudges = db.Column(db.Boolean, default=True, nullable=False)
+    weigh_in_prompts = db.Column(db.Boolean, default=True, nullable=False)
+    health_alerts = db.Column(db.Boolean, default=True, nullable=False)
+    weekly_insights = db.Column(db.Boolean, default=True, nullable=False)
+    streak_celebrations = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('notification_preferences', uselist=False, cascade='all, delete-orphan'))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'meal_reminders': self.meal_reminders,
+            'hydration_nudges': self.hydration_nudges,
+            'weigh_in_prompts': self.weigh_in_prompts,
+            'health_alerts': self.health_alerts,
+            'weekly_insights': self.weekly_insights,
+            'streak_celebrations': self.streak_celebrations,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }

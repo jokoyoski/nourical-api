@@ -21,6 +21,7 @@ pyjwt = "^2.12.1"
 gunicorn = ">=21.0,<26"
 firebase-admin = "^6.5.0"
 flask-jwt-extended = "^4.7.4"
+openai = "^1.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"

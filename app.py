@@ -8,6 +8,8 @@ from auth_routes import auth_bp
 from goals_routes import goals_bp
 from preferences_routes import preferences_bp
 from device_routes import device_bp
+from ai_routes import ai_bp
+from nutrition_routes import nutrition_bp
 import os
 
 app = Flask(__name__)
@@ -84,6 +86,8 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(preferences_bp)
 app.register_blueprint(goals_bp)
 app.register_blueprint(device_bp)
+app.register_blueprint(ai_bp)
+app.register_blueprint(nutrition_bp)
 
 # Create tables
 with app.app_context():

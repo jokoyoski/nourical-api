@@ -9,5 +9,6 @@ class Config:
     DATABASE_URL = os.environ.get('DATABASE_URL') or 'postgresql://nourical_user:nourical_password@localhost:5432/nourical_db'
     RESEND_API_KEY = os.environ.get('RESEND_API_KEY')
     FIREBASE_CREDENTIALS_PATH = os.environ.get('FIREBASE_CREDENTIALS_PATH', 'firebase-credentials.json')
+    OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
     ENV = os.environ.get('ENV', 'local')
     DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
