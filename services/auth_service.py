@@ -104,6 +104,25 @@ class AuthService:
         UserRepository.update_password(user, new_password)
         return user, None
     
+    def verify_current_password(self, user_id, current_password):
+        user = UserRepository.get_user_by_id(user_id)
+        if not user:
+            return False, "User not found"
+        if not user.check_password(current_password):
+            return False, "That password doesn't match. Try again or reset it."
+        return True, None
+
+    def change_password(self, user_id, current_password, new_password):
+        user = UserRepository.get_user_by_id(user_id)
+        if not user:
+            return False, "User not found"
+        if not user.check_password(current_password):
+            return False, "That password doesn't match. Try again or reset it."
+        if len(new_password) < 8:
+            return False, "New password must be at least 8 characters long"
+        UserRepository.update_password(user, new_password)
+        return True, None
+
     def resend_otp(self, email):
         """Resend OTP for registration or password reset"""
         user = UserRepository.get_user_by_email(email)

@@ -1,6 +1,7 @@
 from models import db, OnboardingData
 from datetime import datetime
 import json
+from repositories.user_targets_repository import UserTargetsRepository
 
 class OnboardingRepository:
     @staticmethod
@@ -54,6 +55,7 @@ class OnboardingRepository:
         
         onboarding.updated_at = datetime.utcnow()
         db.session.commit()
+        UserTargetsRepository.clear(user_id)
         return onboarding
     
     @staticmethod

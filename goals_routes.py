@@ -1,5 +1,6 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from services import GoalsService
+from services.ai_suggestion_service import AISuggestionService
 
 goals_bp = Blueprint('goals', __name__, url_prefix='/api/goals')
 
@@ -99,33 +100,34 @@ def get_regions():
 @goals_bp.route('/cuisines', methods=['GET'])
 def get_cuisines():
     """
-    Get available cuisines (mock data)
+    Get cuisines for a given region using AI (cached per region)
     ---
     tags:
       - Goals
+    parameters:
+      - name: region
+        in: query
+        type: string
+        required: true
+        description: Region value e.g. west_africa, europe, asia
     responses:
       200:
-        description: List of available cuisines
-        schema:
-          type: object
-          properties:
-            cuisines:
-              type: array
-              items:
-                type: object
-                properties:
-                  value:
-                    type: string
-                  label:
-                    type: string
-                  description:
-                    type: string
+        description: List of cuisines with image URLs
+      400:
+        description: region param missing
+      500:
+        description: AI error
     """
-    cuisines = GoalsService.get_cuisines()
-    
-    return jsonify({
-        "cuisines": cuisines
-    }), 200
+    region = request.args.get('region', '').strip().lower()
+    if not region:
+        return jsonify({'error': 'region query param is required'}), 400
+
+    try:
+        cuisines = AISuggestionService.get_cuisines_by_region(region)
+        return jsonify({'region': region, 'cuisines': cuisines}), 200
+    except Exception as e:
+        print(f'[AI CUISINES ERROR] {e}')
+        return jsonify({'error': 'Failed to fetch cuisines. Please try again.'}), 500
 
 @goals_bp.route('/health-conditions', methods=['GET'])
 def get_health_conditions():

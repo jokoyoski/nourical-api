@@ -1,5 +1,7 @@
 from flask import Blueprint, request, jsonify
 from services import PreferencesService
+from repositories.user_targets_repository import UserTargetsRepository
+from repositories.food_to_avoid_repository import FoodToAvoidRepository
 from utils import jwt_required
 
 preferences_bp = Blueprint('preferences', __name__, url_prefix='/api/preferences')
@@ -30,7 +32,7 @@ def get_meal_times():
 @jwt_required
 def set_meal_times():
     """
-    Set user's meal times
+    Upsert user's meal times (creates if not exist, updates if they do)
     ---
     tags:
       - Preferences
@@ -268,6 +270,180 @@ def save_onboarding_data():
         'data': onboarding_data
     }), status_code
 
+@preferences_bp.route('/goals', methods=['PATCH'])
+@jwt_required
+def update_goals():
+    """
+    Update user's primary health goal
+    ---
+    tags:
+      - Preferences
+    security:
+      - Bearer: []
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - main_goal
+          properties:
+            main_goal:
+              type: string
+              enum: [lose_weight, maintain_weight, gain_muscle, improve_overall_health, manage_conditions]
+    responses:
+      200:
+        description: Goal updated successfully
+      400:
+        description: Bad request
+      404:
+        description: Onboarding data not found
+    """
+    data = request.get_json()
+    if not data or 'main_goal' not in data:
+        return jsonify({'error': 'main_goal is required'}), 400
+
+    VALID_MAIN_GOALS = {'lose_weight', 'maintain_weight', 'gain_muscle', 'improve_overall_health', 'manage_conditions'}
+    if data['main_goal'] not in VALID_MAIN_GOALS:
+        return jsonify({'error': f"main_goal must be one of: {', '.join(sorted(VALID_MAIN_GOALS))}"}), 400
+
+    user_id = request.current_user_id
+    updated = PreferencesService.update_onboarding_fields(user_id, {'main_goal': data['main_goal']})
+    if not updated:
+        return jsonify({'error': 'Onboarding data not found. Complete onboarding first.'}), 404
+
+    UserTargetsRepository.clear(user_id)
+    return jsonify({'message': 'Goal updated successfully', 'data': updated}), 200
+
+
+@preferences_bp.route('/health-conditions', methods=['PATCH'])
+@jwt_required
+def update_health_conditions():
+    """
+    Update user's health conditions
+    ---
+    tags:
+      - Preferences
+    security:
+      - Bearer: []
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - health_conditions
+          properties:
+            health_conditions:
+              type: array
+              items:
+                type: string
+                enum:
+                  - type_2_diabetes
+                  - hypertension
+                  - high_cholesterol
+                  - pcos
+                  - gout
+                  - kidney_disease
+                  - heart_disease
+                  - anemia
+                  - celiac_disease
+                  - lactose_intolerance
+                  - ibs
+                  - hypothyroidism
+                  - cancer
+                  - pregnancy
+                  - other
+                  - prefer_not_to_say
+    responses:
+      200:
+        description: Health conditions updated successfully
+      400:
+        description: Bad request
+      404:
+        description: Onboarding data not found
+    """
+    data = request.get_json()
+    if not data or 'health_conditions' not in data:
+        return jsonify({'error': 'health_conditions is required'}), 400
+
+    VALID_CONDITIONS = {
+        'type_2_diabetes', 'hypertension', 'high_cholesterol', 'pcos', 'gout',
+        'kidney_disease', 'heart_disease', 'anemia', 'celiac_disease',
+        'lactose_intolerance', 'ibs', 'hypothyroidism', 'cancer', 'pregnancy',
+        'other', 'prefer_not_to_say'
+    }
+    invalid = [v for v in data['health_conditions'] if v not in VALID_CONDITIONS]
+    if invalid:
+        return jsonify({'error': f"Invalid conditions: {invalid}. Must be from: {', '.join(sorted(VALID_CONDITIONS))}"}), 400
+
+    user_id = request.current_user_id
+    updated = PreferencesService.update_onboarding_fields(user_id, {'health_conditions': data['health_conditions']})
+    if not updated:
+        return jsonify({'error': 'Onboarding data not found. Complete onboarding first.'}), 404
+
+    UserTargetsRepository.clear(user_id)
+    return jsonify({'message': 'Health conditions updated successfully', 'data': updated}), 200
+
+
+@preferences_bp.route('/body-measurements', methods=['PATCH'])
+@jwt_required
+def update_body_measurements():
+    """
+    Update user's body measurements
+    ---
+    tags:
+      - Preferences
+    security:
+      - Bearer: []
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            weight_kg:
+              type: number
+              description: Current weight in kilograms
+            height_cm:
+              type: number
+              description: Height in centimeters
+            target_weight_kg:
+              type: number
+              description: Target weight in kilograms
+    responses:
+      200:
+        description: Body measurements updated successfully
+      400:
+        description: Bad request
+      404:
+        description: Onboarding data not found
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Request body is required'}), 400
+
+    allowed = {'weight_kg', 'height_cm', 'target_weight_kg'}
+    fields = {k: v for k, v in data.items() if k in allowed}
+    if not fields:
+        return jsonify({'error': f"At least one of {sorted(allowed)} is required"}), 400
+
+    for field, value in fields.items():
+        if not isinstance(value, (int, float)) or value <= 0:
+            return jsonify({'error': f"{field} must be a positive number"}), 400
+
+    user_id = request.current_user_id
+    updated = PreferencesService.update_onboarding_fields(user_id, fields)
+    if not updated:
+        return jsonify({'error': 'Onboarding data not found. Complete onboarding first.'}), 404
+
+    UserTargetsRepository.clear(user_id)
+    return jsonify({'message': 'Body measurements updated successfully', 'data': updated}), 200
+
+
 @preferences_bp.route('/onboarding', methods=['GET'])
 @jwt_required
 def get_onboarding_data():
@@ -292,3 +468,87 @@ def get_onboarding_data():
     return jsonify({
         'data': data
     }), 200
+
+
+@preferences_bp.route('/foods-to-avoid', methods=['GET'])
+@jwt_required
+def get_foods_to_avoid():
+    """
+    Get all foods the user wants to avoid in meal plans
+    ---
+    tags:
+      - Preferences
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: List of foods to avoid
+    """
+    user_id = request.current_user_id
+    items = FoodToAvoidRepository.get_all(user_id)
+    return jsonify({'foods_to_avoid': [i.to_dict() for i in items]}), 200
+
+
+@preferences_bp.route('/foods-to-avoid', methods=['POST'])
+@jwt_required
+def add_foods_to_avoid():
+    """
+    Add one or more foods to avoid (excluded from AI meal plan suggestions)
+    ---
+    tags:
+      - Preferences
+    security:
+      - Bearer: []
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            foods:
+              type: array
+              items:
+                type: string
+              example: ["peanuts", "dairy", "mustard"]
+    responses:
+      201:
+        description: Foods added
+      400:
+        description: Bad request
+    """
+    user_id = request.current_user_id
+    data = request.get_json()
+    foods = data.get('foods') if data else None
+    if not foods or not isinstance(foods, list):
+        return jsonify({'error': '"foods" must be a non-empty list of strings'}), 400
+    added = FoodToAvoidRepository.add_bulk(user_id, foods)
+    return jsonify({'message': f'{len(added)} food(s) added', 'foods_to_avoid': [i.to_dict() for i in added]}), 201
+
+
+@preferences_bp.route('/foods-to-avoid/<int:food_id>', methods=['DELETE'])
+@jwt_required
+def delete_food_to_avoid(food_id):
+    """
+    Remove a food from the avoid list
+    ---
+    tags:
+      - Preferences
+    security:
+      - Bearer: []
+    parameters:
+      - name: food_id
+        in: path
+        required: true
+        type: integer
+    responses:
+      200:
+        description: Food removed
+      404:
+        description: Not found
+    """
+    user_id = request.current_user_id
+    deleted = FoodToAvoidRepository.delete(user_id, food_id)
+    if not deleted:
+        return jsonify({'error': 'Food not found'}), 404
+    return jsonify({'message': 'Food removed from avoid list'}), 200

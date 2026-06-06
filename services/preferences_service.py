@@ -66,6 +66,21 @@ class PreferencesService:
             return onboarding.to_dict(), "created"
     
     @staticmethod
+    def update_onboarding_fields(user_id, fields):
+        existing = OnboardingRepository.get_onboarding_data(user_id)
+        if existing:
+            updated = OnboardingRepository.update_onboarding_data(user_id, fields)
+        else:
+            updated = OnboardingRepository.create_onboarding_data(user_id, fields)
+        if not updated:
+            return None
+        data = updated.to_dict()
+        for key in ('dietary_preferences', 'cuisine_preferences', 'health_conditions'):
+            if data.get(key):
+                data[key] = json.loads(data[key])
+        return data
+
+    @staticmethod
     def get_onboarding_data(user_id):
         onboarding = OnboardingRepository.get_onboarding_data(user_id)
         if not onboarding:

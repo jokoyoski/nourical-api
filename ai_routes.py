@@ -2,6 +2,9 @@ from flask import Blueprint, jsonify, request
 from utils import jwt_required
 from services.ai_suggestion_service import AISuggestionService
 from repositories import OnboardingRepository, MealTimeRepository
+from repositories.user_targets_repository import UserTargetsRepository
+from repositories.food_to_avoid_repository import FoodToAvoidRepository
+import json
 
 ai_bp = Blueprint('ai', __name__, url_prefix='/api/ai')
 
@@ -52,11 +55,14 @@ def get_ai_suggestions():
 
     meal_times_list = [mt.to_dict() for mt in meal_times]
 
+    foods_to_avoid = FoodToAvoidRepository.get_names(user_id)
+
     try:
-        meal_plan = AISuggestionService.get_meal_plan(onboarding_dict, meal_times_list)
+        meal_plan = AISuggestionService.get_meal_plan(onboarding_dict, meal_times_list, foods_to_avoid)
         return jsonify({'data': meal_plan}), 200
     except ValueError as e:
         return jsonify({'error': str(e)}), 500
     except Exception as e:
         print(f"[AI ERROR] {e}")
         return jsonify({'error': 'Failed to generate meal plan. Please try again.'}), 500
+

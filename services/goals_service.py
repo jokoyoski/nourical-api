@@ -27,13 +27,6 @@ class Region(str, Enum):
     ASIA = "asia"
     OCEANIA = "oceania"
 
-class Cuisine(str, Enum):
-    NIGERIAN = "nigerian"
-    GHANAIAN = "ghanaian"
-    SENEGALESE = "senegalese"
-    IVORIAN = "ivorian"
-    CAMEROONIAN = "cameroonian"
-
 class HealthCondition(str, Enum):
     PREGNANCY = "pregnancy"
     DIABETES = "diabetes"
@@ -189,37 +182,6 @@ class GoalsService:
             }
         ]
         return regions
-    
-    @staticmethod
-    def get_cuisines():
-        cuisines = [
-            {
-                "value": Cuisine.NIGERIAN.value,
-                "label": "Nigerian",
-                "description": "Jollof rice, Beans, Poundo yam"
-            },
-            {
-                "value": Cuisine.GHANAIAN.value,
-                "label": "Ghanaian",
-                "description": "Fufu, Light soup, waakye, kelewele"
-            },
-            {
-                "value": Cuisine.SENEGALESE.value,
-                "label": "Senegalese",
-                "description": "Mafe, yasse, Poundo yam"
-            },
-            {
-                "value": Cuisine.IVORIAN.value,
-                "label": "Ivorian",
-                "description": "Attieke, Aloco"
-            },
-            {
-                "value": Cuisine.CAMEROONIAN.value,
-                "label": "Cameroonian",
-                "description": "Ndole, eru, koki, suya"
-            }
-        ]
-        return cuisines
     
     @staticmethod
     def get_health_conditions():

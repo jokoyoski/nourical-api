@@ -1,5 +1,7 @@
 from repositories.food_log_repository import FoodLogRepository
+from repositories.meal_plan_repository import MealPlanRepository
 from repositories.onboarding_repository import OnboardingRepository
+from repositories.user_targets_repository import UserTargetsRepository
 from datetime import date
 
 ACTIVITY_MULTIPLIERS = {
@@ -35,34 +37,79 @@ def calculate_targets(onboarding):
     multiplier = ACTIVITY_MULTIPLIERS.get(activity, 1.2)
     adjustment = GOAL_ADJUSTMENTS.get(goal, 0)
     calorie_target = round(bmr * multiplier + adjustment)
+    calorie_target = max(calorie_target, 1200)  # minimum safe floor
 
     # Macro targets
-    protein_target = round(weight * 1.6)             # 1.6g per kg
-    fat_target = round((calorie_target * 0.25) / 9)  # 25% of calories from fat
+    protein_target = max(round(weight * 1.6), 50)    # 1.6g per kg, min 50g
+    fat_target = max(round((calorie_target * 0.25) / 9), 20)  # 25% of calories, min 20g
     carb_target = round((calorie_target - (protein_target * 4) - (fat_target * 9)) / 4)
 
     return {
         'calories': calorie_target,
         'protein_g': protein_target,
-        'carbs_g': max(carb_target, 0),
+        'carbs_g': max(carb_target, 50),
         'fat_g': fat_target,
     }
 
 
 class NutritionService:
     @staticmethod
-    def log_food(user_id, food_name, calories, protein_g, carbs_g, fat_g, meal_type=None):
+    def log_food(user_id, food_name, calories, protein_g, carbs_g, fat_g, meal_type=None, logged_at=None):
         log = FoodLogRepository.log_food(
-            user_id, food_name, calories, protein_g, carbs_g, fat_g, meal_type
+            user_id, food_name, calories, protein_g, carbs_g, fat_g, meal_type, logged_at
         )
+
+        if meal_type and logged_at:
+            day_name = logged_at.strftime('%A').lower()
+            MealPlanRepository.replace_meal_for_day(
+                user_id=user_id,
+                day_name=day_name,
+                meal_type=meal_type,
+                food_name=food_name,
+                calories=calories,
+                protein_g=protein_g,
+                carbs_g=carbs_g,
+                fat_g=fat_g,
+                eaten_at=logged_at
+            )
+
         return log.to_dict()
 
     @staticmethod
     def get_today_summary(user_id):
-        onboarding = OnboardingRepository.get_onboarding_data(user_id)
-        targets = calculate_targets(onboarding) if onboarding else {
-            'calories': 2000, 'protein_g': 50, 'carbs_g': 250, 'fat_g': 65
-        }
+        db_targets = UserTargetsRepository.get(user_id)
+        if db_targets:
+            targets = {
+                'calories': db_targets.calories,
+                'protein_g': db_targets.protein_g,
+                'carbs_g': db_targets.carbs_g,
+                'fat_g': db_targets.fat_g
+            }
+        else:
+            from services.ai_suggestion_service import AISuggestionService
+            import json as _json
+            onboarding = OnboardingRepository.get_onboarding_data(user_id)
+            if onboarding:
+                onboarding_dict = onboarding.to_dict()
+                for field in ['dietary_preferences', 'cuisine_preferences', 'health_conditions']:
+                    val = onboarding_dict.get(field)
+                    if val:
+                        try:
+                            onboarding_dict[field] = _json.loads(val)
+                        except (ValueError, TypeError):
+                            pass
+                result = AISuggestionService.get_daily_targets(onboarding_dict)
+                saved = UserTargetsRepository.save(
+                    user_id=user_id,
+                    calories=result['calories'],
+                    protein_g=result['protein_g'],
+                    carbs_g=result['carbs_g'],
+                    fat_g=result['fat_g'],
+                    reasoning=result.get('reasoning')
+                )
+                targets = {'calories': saved.calories, 'protein_g': saved.protein_g, 'carbs_g': saved.carbs_g, 'fat_g': saved.fat_g}
+            else:
+                targets = {'calories': 2000, 'protein_g': 50, 'carbs_g': 250, 'fat_g': 65}
 
         logs = FoodLogRepository.get_logs_for_date(user_id, date.today())
 

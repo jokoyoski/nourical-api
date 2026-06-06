@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request
+from datetime import datetime, date
 from utils import jwt_required
 from services.nutrition_service import NutritionService
 from repositories.meal_plan_repository import MealPlanRepository
@@ -89,6 +90,13 @@ def log_food():
             meal_type:
               type: string
               enum: [breakfast, lunch, dinner, snack]
+            meal_date:
+              type: string
+              format: date
+              description: "Date the food was eaten (e.g. 2026-06-05). Defaults to today if omitted."
+            meal_time:
+              type: string
+              description: "Time the food was eaten in HH:MM format (e.g. 12:00). Optional."
     responses:
       201:
         description: Food logged successfully
@@ -105,6 +113,16 @@ def log_food():
     if not food_name or calories is None:
         return jsonify({'error': 'food_name and calories are required'}), 400
 
+    logged_at = None
+    meal_date_str = data.get('meal_date')
+    meal_time_str = data.get('meal_time') or ''
+    if meal_date_str:
+        try:
+            dt_str = f"{meal_date_str}T{meal_time_str}" if meal_time_str else meal_date_str
+            logged_at = datetime.fromisoformat(dt_str)
+        except ValueError:
+            return jsonify({'error': 'meal_date must be YYYY-MM-DD and meal_time must be HH:MM'}), 400
+
     user_id = request.current_user_id
     log = NutritionService.log_food(
         user_id=user_id,
@@ -113,7 +131,8 @@ def log_food():
         protein_g=data.get('protein_g', 0),
         carbs_g=data.get('carbs_g', 0),
         fat_g=data.get('fat_g', 0),
-        meal_type=data.get('meal_type')
+        meal_type=data.get('meal_type'),
+        logged_at=logged_at
     )
     return jsonify({'message': 'Food logged successfully', 'log': log}), 201
 
@@ -144,6 +163,46 @@ def delete_log(log_id):
     if not deleted:
         return jsonify({'error': 'Log not found'}), 404
     return jsonify({'message': 'Log deleted successfully'}), 200
+
+
+@nutrition_bp.route('/today/meals', methods=['GET'])
+@jwt_required
+def get_today_meals():
+    """
+    Get today's meals from the saved weekly meal plan
+    ---
+    tags:
+      - Nutrition
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: Today's meal plan items grouped by meal type
+      404:
+        description: No meal plan saved for this week
+    """
+    user_id = request.current_user_id
+    plan = MealPlanRepository.get_current_plan(user_id)
+    if not plan:
+        return jsonify({'error': 'No meal plan saved for this week'}), 404
+
+    today_name = date.today().strftime('%A').lower()  # e.g. "monday"
+    today_items = [item.to_dict() for item in plan.items if item.day == today_name]
+
+    grouped = {}
+    for item in today_items:
+        meal_type = item['meal_type']
+        if meal_type not in grouped:
+            grouped[meal_type] = {'meal_type': meal_type, 'time': item['meal_time'], 'foods': []}
+        grouped[meal_type]['foods'].append(item)
+
+    sorted_meals = sorted(grouped.values(), key=lambda x: x['time'] or '00:00')
+
+    return jsonify({
+        'day': today_name,
+        'date': date.today().isoformat(),
+        'meals': sorted_meals
+    }), 200
 
 
 @nutrition_bp.route('/meal-plan', methods=['POST'])
@@ -207,77 +266,3 @@ def get_meal_plan():
     if not plan:
         return jsonify({'error': 'No meal plan saved for this week. Call POST /api/ai/suggestions then save it.'}), 404
     return jsonify({'meal_plan': plan.to_dict()}), 200
-
-
-@nutrition_bp.route('/meal-plan/item/<int:item_id>/eat', methods=['PATCH'])
-@jwt_required
-def mark_item_eaten(item_id):
-    """
-    Mark a meal plan food item as eaten (also logs it to daily food log)
-    ---
-    tags:
-      - Nutrition
-    security:
-      - Bearer: []
-    parameters:
-      - name: item_id
-        in: path
-        required: true
-        type: integer
-    responses:
-      200:
-        description: Item marked as eaten
-      404:
-        description: Item not found
-    """
-    user_id = request.current_user_id
-    item = MealPlanRepository.mark_eaten(item_id, user_id)
-    if not item:
-        return jsonify({'error': 'Meal plan item not found'}), 404
-
-    # Auto-log to daily food log
-    FoodLogRepository.log_food(
-        user_id=user_id,
-        food_name=item.food_name,
-        calories=item.calories,
-        protein_g=item.protein_g,
-        carbs_g=item.carbs_g,
-        fat_g=item.fat_g,
-        meal_type=item.meal_type
-    )
-
-    return jsonify({
-        'message': f'{item.food_name} marked as eaten',
-        'item': item.to_dict()
-    }), 200
-
-
-@nutrition_bp.route('/meal-plan/item/<int:item_id>/uneat', methods=['PATCH'])
-@jwt_required
-def mark_item_uneaten(item_id):
-    """
-    Unmark a meal plan food item as eaten
-    ---
-    tags:
-      - Nutrition
-    security:
-      - Bearer: []
-    parameters:
-      - name: item_id
-        in: path
-        required: true
-        type: integer
-    responses:
-      200:
-        description: Item unmarked
-      404:
-        description: Item not found
-    """
-    user_id = request.current_user_id
-    item = MealPlanRepository.mark_uneaten(item_id, user_id)
-    if not item:
-        return jsonify({'error': 'Meal plan item not found'}), 404
-    return jsonify({
-        'message': f'{item.food_name} unmarked as eaten',
-        'item': item.to_dict()
-    }), 200
