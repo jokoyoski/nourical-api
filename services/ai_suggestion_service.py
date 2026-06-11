@@ -31,6 +31,23 @@ def get_avatar_url(food_name):
     encoded = quote(food_name)
     return f"https://ui-avatars.com/api/?name={encoded}&size=300&background=4CAF50&color=fff&rounded=true&bold=true"
 
+def recalculate_from_ingredients(food):
+    ingredients = food.get("ingredients") or []
+    if not ingredients:
+        return
+    calories = protein = carbs = fat = 0.0
+    for ing in ingredients:
+        scale = (ing.get("grams") or 0) / 100
+        calories += (ing.get("calories_per_100g") or 0) * scale
+        protein  += (ing.get("protein_per_100g") or 0) * scale
+        carbs    += (ing.get("carbs_per_100g") or 0) * scale
+        fat      += (ing.get("fat_per_100g") or 0) * scale
+    food["calories"]  = round(calories, 1)
+    food["protein_g"] = round(protein, 1)
+    food["carbs_g"]   = round(carbs, 1)
+    food["fat_g"]     = round(fat, 1)
+
+
 def inject_images(meal_plan):
     for day in DAYS:
         if day not in meal_plan:
@@ -41,8 +58,7 @@ def inject_images(meal_plan):
             meal_data["date"] = actual_date
             meal_data["meal_datetime"] = f"{actual_date}T{meal_time}:00"
             for food in meal_data.get("foods", []):
-                name = food.get("name", "food")
-                food["image_url"] = get_food_image(name)
+                recalculate_from_ingredients(food)
                 food["date"] = actual_date
                 food["meal_datetime"] = f"{actual_date}T{meal_time}:00"
                 food.pop("image_keyword", None)
@@ -70,7 +86,7 @@ def build_prompt(onboarding, meal_times, foods_to_avoid=None):
 
     avoid_str = ", ".join(foods_to_avoid) if foods_to_avoid else "none"
 
-    prompt = f"""You are a professional nutritionist AI. Create a personalised weekly meal plan for this user:
+    prompt = f"""You are a professional nutritionist AI with deep knowledge of global cuisines and food composition. Create a personalised weekly meal plan for this user.
 
 User Profile:
 - Age: {age}
@@ -88,33 +104,61 @@ User Profile:
 
 Generate a full 7-day meal plan. For each day ({days_str}), include one food item per meal slot ({meal_slots_str}).
 
+HOW TO CALCULATE CALORIES AND MACROS (follow this exactly):
+For every food item, you must:
+1. List the main ingredients and their estimated weight in grams for a typical serving
+2. Use standard nutritional values per 100g for each ingredient to calculate its contribution
+3. Sum all ingredients to get the total calories, protein_g, carbs_g, and fat_g
+4. Never guess or use round numbers — the final values must be derived from the ingredient breakdown
+
+Example for "Jollof Rice":
+ingredients: [
+  {{"item": "white rice", "grams": 150, "calories_per_100g": 130, "protein_per_100g": 2.7, "carbs_per_100g": 28, "fat_per_100g": 0.3}},
+  {{"item": "tomato sauce", "grams": 80, "calories_per_100g": 35, "protein_per_100g": 1.5, "carbs_per_100g": 7, "fat_per_100g": 0.2}},
+  {{"item": "palm oil", "grams": 10, "calories_per_100g": 884, "protein_per_100g": 0, "carbs_per_100g": 0, "fat_per_100g": 100}},
+  {{"item": "chicken", "grams": 100, "calories_per_100g": 165, "protein_per_100g": 31, "carbs_per_100g": 0, "fat_per_100g": 3.6}}
+]
+Then sum: calories = (150*130 + 80*35 + 10*884 + 100*165) / 100 = 195 + 28 + 88.4 + 165 = 476 kcal
+
 Each food item must include:
 - name (string)
-- calories (number)
-- protein_g (number)
-- carbs_g (number)
-- fat_g (number)
 - description (one short sentence)
-- image_keyword (1-2 simple English words best describing the food visually, e.g. "oatmeal", "jollof rice", "grilled chicken", "pancakes")
+- ingredients (list of objects with: item, grams, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g)
+- calories (number) — must be calculated from ingredients above, not guessed
+- protein_g (number) — must be calculated from ingredients above
+- carbs_g (number) — must be calculated from ingredients above
+- fat_g (number) — must be calculated from ingredients above
 
 IMPORTANT rules:
-- NEVER include any of the foods listed under "Foods to NEVER include" — not as a main item, ingredient, or side
+- NEVER include any of the foods listed under "Foods to NEVER include"
 - Respect all health conditions (e.g. diabetes = low sugar, heart disease = low sodium/fat)
 - Prefer foods from the user's region and cuisine preferences
 - Vary the meals across the week (no repeats)
 - Keep calorie targets appropriate for the user's goal
+- Calories and macros MUST be consistent: calories ≈ (protein_g * 4) + (carbs_g * 4) + (fat_g * 9)
+- Never return round numbers like 400, 500, 600 — they signal a guess
 
 Return ONLY valid JSON in exactly this structure, no extra text:
 {{
   "monday": {{
-    "breakfast": {{ "time": "07:00", "foods": [{{"name": "...", "calories": 0, "protein_g": 0, "carbs_g": 0, "fat_g": 0, "description": "..."}}] }},
+    "breakfast": {{ "time": "07:00", "foods": [{{
+      "name": "...",
+      "description": "...",
+      "ingredients": [{{"item": "...", "grams": 0, "calories_per_100g": 0, "protein_per_100g": 0, "carbs_per_100g": 0, "fat_per_100g": 0}}],
+      "calories": 0,
+      "protein_g": 0,
+      "carbs_g": 0,
+      "fat_g": 0
+    }}] }},
     "lunch": {{ "time": "12:00", "foods": [...] }},
     "dinner": {{ "time": "19:00", "foods": [...] }}
   }},
   "tuesday": {{ ... }},
   "wednesday": {{ ... }},
   "thursday": {{ ... }},
-  "friday": {{ ... }}
+  "friday": {{ ... }},
+  "saturday": {{ ... }},
+  "sunday": {{ ... }}
 }}
 
 Replace times with the user's actual meal times: {meal_slots_str}
